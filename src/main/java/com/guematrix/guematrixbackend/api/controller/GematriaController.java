@@ -10,7 +10,7 @@ import java.util.Map;
 @RestController
 public class GematriaController {
 
-    // Alphabet hébraïque (22 lettres, sans finales) pour Atbash et Sidouri
+    // Alphabet hébraïque (22 lettres, sans finales) pour Atbash, Albam, Sidouri
     private static final String ALEPHBET = "אבגדהוזחטיכלמנסעפצקרשת";
 
     // Finales -> lettre de base (pour gérer ך/כ, ם/מ, etc.)
@@ -22,7 +22,7 @@ public class GematriaController {
             'ץ', 'צ'
     );
 
-    // Lettres de base -> formes finales (pour la DERNIÈRE lettre Atbash)
+    // Lettres de base -> formes finales (pour la DERNIÈRE lettre Atbash/Albam)
     private static final Map<Character, Character> BASE_TO_FINAL = Map.of(
             'כ', 'ך',
             'מ', 'ם',
@@ -92,6 +92,10 @@ public class GematriaController {
                 normalizedMethod = "siduri";
                 methodNameForJson = "MISPAR_SIDURI";
             }
+            case "albam", "mispar_albam" -> {
+                normalizedMethod = "albam";
+                methodNameForJson = "MISPAR_ALBAM";
+            }
             default -> {
                 normalizedMethod = "hechrechi";
                 methodNameForJson = "MISPAR_HECHRACHI";
@@ -160,9 +164,31 @@ public class GematriaController {
                         displayChar = originalChar;
                     }
                 }
+                case "albam" -> {
+                    // Albam : alphabet coupé en deux lignes de 11 lettres
+                    // א-כ  <->  ל-ת
+                    int idx = ALEPHBET.indexOf(baseChar);
+                    if (idx >= 0) {
+                        int mappedIdx = (idx < 11) ? idx + 11 : idx - 11;
+                        char mappedBaseChar = ALEPHBET.charAt(mappedIdx);
+
+                        Integer mappedValue = HECHRACHI_VALUES.get(mappedBaseChar);
+                        letterValue = (mappedValue != null ? mappedValue : baseValue);
+
+                        // Comme Atbash : forme finale si c'est la dernière lettre et si possible
+                        if (i == normalizedText.length() - 1) {
+                            Character finalForm = BASE_TO_FINAL.get(mappedBaseChar);
+                            displayChar = (finalForm != null ? finalForm : mappedBaseChar);
+                        } else {
+                            displayChar = mappedBaseChar;
+                        }
+                    } else {
+                        letterValue = baseValue;
+                        displayChar = originalChar;
+                    }
+                }
                 case "siduri" -> {
-                    // Mispar Sidouri : valeur = rang de la lettre dans l’alphabet
-                    // א=1, ב=2, ..., ת=22
+                    // Mispar Sidouri : rang de la lettre dans ALEPHBET (1..22)
                     int idx = ALEPHBET.indexOf(baseChar);
                     if (idx >= 0) {
                         letterValue = idx + 1;
