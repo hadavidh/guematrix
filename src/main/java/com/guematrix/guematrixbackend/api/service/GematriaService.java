@@ -62,6 +62,32 @@ public class GematriaService {
             Map.entry('ת', 400)
     );
 
+    // Orthographe des lettres pour le Milouï (choix d'une version standard)
+    private static final Map<Character, String> MILUI_SPELLING = Map.ofEntries(
+            Map.entry('א', "אלף"),
+            Map.entry('ב', "בית"),
+            Map.entry('ג', "גימל"),
+            Map.entry('ד', "דלת"),
+            Map.entry('ה', "הא"),
+            Map.entry('ו', "וו"),
+            Map.entry('ז', "זין"),
+            Map.entry('ח', "חית"),
+            Map.entry('ט', "טית"),
+            Map.entry('י', "יוד"),
+            Map.entry('כ', "כף"),
+            Map.entry('ל', "למד"),
+            Map.entry('מ', "מם"),
+            Map.entry('נ', "נון"),
+            Map.entry('ס', "סמך"),
+            Map.entry('ע', "עין"),
+            Map.entry('פ', "פה"),
+            Map.entry('צ', "צדי"),
+            Map.entry('ק', "קוף"),
+            Map.entry('ר', "ריש"),
+            Map.entry('ש', "שין"),
+            Map.entry('ת', "תיו")
+    );
+
     public GematriaResponse compute(String text, GematriaMethod method) {
         if (text == null) {
             text = "";
@@ -82,37 +108,41 @@ public class GematriaService {
             }
 
             int letterValue;
-            char displayChar = originalChar; // par défaut on affiche la lettre d’origine
+            String displayText = String.valueOf(originalChar); // ce qu'on mettra dans le JSON
 
             switch (method) {
-                case HECHRACHI:
+                case HECHRACHI -> {
                     letterValue = baseValue;
-                    break;
+                    displayText = String.valueOf(originalChar);
+                }
 
-                case GADOL:
+                case GADOL -> {
                     if (originalChar == 'ך')      letterValue = 500;
                     else if (originalChar == 'ם') letterValue = 600;
                     else if (originalChar == 'ן') letterValue = 700;
                     else if (originalChar == 'ף') letterValue = 800;
                     else if (originalChar == 'ץ') letterValue = 900;
                     else                          letterValue = baseValue;
-                    break;
+                    displayText = String.valueOf(originalChar);
+                }
 
-                case KATAN:
+                case KATAN -> {
                     int tmp = baseValue % 9;
                     letterValue = (tmp == 0 && baseValue > 0) ? 9 : tmp;
-                    break;
+                    displayText = String.valueOf(originalChar);
+                }
 
-                case SIDURI:
+                case SIDURI -> {
                     int idxSiduri = ALEPHBET.indexOf(baseChar);
                     if (idxSiduri >= 0) {
                         letterValue = idxSiduri + 1; // א=1, ב=2, ..., ת=22
                     } else {
                         letterValue = 0;
                     }
-                    break;
+                    displayText = String.valueOf(originalChar);
+                }
 
-                case ATBASH: {
+                case ATBASH -> {
                     int idx = ALEPHBET.indexOf(baseChar);
                     if (idx >= 0) {
                         int mappedIdx = ALEPHBET.length() - 1 - idx;
@@ -128,14 +158,14 @@ public class GematriaService {
                                 shown = finalForm;
                             }
                         }
-                        displayChar = shown;
+                        displayText = String.valueOf(shown);
                     } else {
                         letterValue = baseValue;
+                        displayText = String.valueOf(originalChar);
                     }
-                    break;
                 }
 
-                case ALBAM: {
+                case ALBAM -> {
                     int idx = ALEPHBET.indexOf(baseChar);
                     if (idx >= 0) {
                         // deux lignes de 11 lettres : א-כ <-> ל-ת
@@ -152,21 +182,35 @@ public class GematriaService {
                                 shown = finalForm;
                             }
                         }
-                        displayChar = shown;
+                        displayText = String.valueOf(shown);
                     } else {
                         letterValue = baseValue;
+                        displayText = String.valueOf(originalChar);
                     }
-                    break;
                 }
 
-                default:
+                case MILUI -> {
+                    String spelling = MILUI_SPELLING.get(baseChar);
+                    if (spelling == null) {
+                        // si pas de milui défini, on retombe sur la valeur simple
+                        letterValue = baseValue;
+                        displayText = String.valueOf(originalChar);
+                    } else {
+                        letterValue = computeHechrechiForString(spelling);
+                        displayText = spelling;  // <-- ici on renvoie אלף, בית, etc.
+                    }
+                }
+
+                default -> {
                     letterValue = baseValue;
-                    break;
+                    displayText = String.valueOf(originalChar);
+                }
             }
 
             total += letterValue;
 
-            GematriaLetterDetail detail = new GematriaLetterDetail(String.valueOf(displayChar), letterValue);
+            GematriaLetterDetail detail =
+                    new GematriaLetterDetail(displayText, letterValue);
             details.add(detail);
         }
 
@@ -182,5 +226,19 @@ public class GematriaService {
     private char toBaseLetter(char ch) {
         Character base = FINAL_TO_BASE.get(ch);
         return (base != null ? base : ch);
+    }
+
+    // Gematria hechrechi d'une chaîne (utilisé pour le Milouï)
+    private int computeHechrechiForString(String s) {
+        int sum = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            char baseCh = toBaseLetter(ch);
+            Integer v = HECHRACHI_VALUES.get(baseCh);
+            if (v != null) {
+                sum += v;
+            }
+        }
+        return sum;
     }
 }

@@ -6,5 +6,6 @@ public enum GematriaMethod {
     KATAN,
     ATBASH,
     SIDURI,
-    ALBAM
+    ALBAM,
+    MILUI
 }

@@ -4,9 +4,6 @@ import org.springframework.web.bind.annotation.*;
 import com.guematrix.guematrixbackend.api.model.GematriaMethod;
 import com.guematrix.guematrixbackend.api.model.GematriaResponse;
 import com.guematrix.guematrixbackend.api.service.GematriaService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,6 +58,13 @@ public class GematriaController {
             case "albam":
             case "mispar_albam":
                 return GematriaMethod.ALBAM;
+
+            case "milui":
+            case "miloui":
+            case "miluy":
+            case "mispar_milui":
+            case "mispar_miloui":
+                return GematriaMethod.MILUI;
 
             default:
                 return GematriaMethod.HECHRACHI;
