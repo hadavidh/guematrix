@@ -2,6 +2,8 @@ package com.guematrix.guematrixbackend.api.model;
 
 import java.util.List;
 
+
+
 public class GematriaResponse {
 
     private String text;
