@@ -66,6 +66,12 @@ public class GematriaController {
             case "mispar_miloui":
                 return GematriaMethod.MILUI;
 
+            case "hakadmi":
+            case "kadmi":
+            case "mispar_kadmi":
+            case "mispar_hakadmi":
+                 return GematriaMethod.HAKADMI;
+
             default:
                 return GematriaMethod.HECHRACHI;
         }

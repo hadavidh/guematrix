@@ -10,7 +10,7 @@ import java.util.Map;
 @Service
 public class GematriaService {
 
-    // Alphabet hébraïque (22 lettres, sans finales) pour Atbash, Albam, Siduri
+    // Alphabet hébraïque (22 lettres, sans finales) pour Atbash, Albam, Siduri, Hakadmi
     private static final String ALEPHBET = "אבגדהוזחטיכלמנסעפצקרשת";
 
     // Finales -> lettre de base (pour gérer ך/כ, ם/מ, etc.)
@@ -62,7 +62,7 @@ public class GematriaService {
             Map.entry('ת', 400)
     );
 
-    // Orthographe des lettres pour le Milouï (choix d'une version standard)
+    // Orthographe des lettres pour le Milouï
     private static final Map<Character, String> MILUI_SPELLING = Map.ofEntries(
             Map.entry('א', "אלף"),
             Map.entry('ב', "בית"),
@@ -103,12 +103,12 @@ public class GematriaService {
 
             Integer baseValue = HECHRACHI_VALUES.get(baseChar);
             if (baseValue == null) {
-                // caractère non hébraïque, nikoud, etc.
+                // caractère non hébreu / nikoud / ponctuation...
                 continue;
             }
 
             int letterValue;
-            String displayText = String.valueOf(originalChar); // ce qu'on mettra dans le JSON
+            String displayText = String.valueOf(originalChar); // ce qu'on affiche dans le JSON
 
             switch (method) {
                 case HECHRACHI -> {
@@ -168,7 +168,6 @@ public class GematriaService {
                 case ALBAM -> {
                     int idx = ALEPHBET.indexOf(baseChar);
                     if (idx >= 0) {
-                        // deux lignes de 11 lettres : א-כ <-> ל-ת
                         int mappedIdx = (idx < 11) ? idx + 11 : idx - 11;
                         char mappedBaseChar = ALEPHBET.charAt(mappedIdx);
 
@@ -192,12 +191,24 @@ public class GematriaService {
                 case MILUI -> {
                     String spelling = MILUI_SPELLING.get(baseChar);
                     if (spelling == null) {
-                        // si pas de milui défini, on retombe sur la valeur simple
                         letterValue = baseValue;
                         displayText = String.valueOf(originalChar);
                     } else {
                         letterValue = computeHechrechiForString(spelling);
-                        displayText = spelling;  // <-- ici on renvoie אלף, בית, etc.
+                        displayText = spelling; // ex : אלף, בית...
+                    }
+                }
+
+                case HAKADMI -> {
+                    int idx = ALEPHBET.indexOf(baseChar);
+                    if (idx >= 0) {
+                        // Préfixe de l'alphabet : א..lettre
+                        String prefix = ALEPHBET.substring(0, idx + 1);
+                        letterValue = computeHechrechiForString(prefix);
+                        displayText = prefix; // ex : א, אבגד, אבגדהוזחטיכלמ
+                    } else {
+                        letterValue = baseValue;
+                        displayText = String.valueOf(originalChar);
                     }
                 }
 
@@ -208,10 +219,7 @@ public class GematriaService {
             }
 
             total += letterValue;
-
-            GematriaLetterDetail detail =
-                    new GematriaLetterDetail(displayText, letterValue);
-            details.add(detail);
+            details.add(new GematriaLetterDetail(displayText, letterValue));
         }
 
         GematriaResponse response = new GematriaResponse();
@@ -228,7 +236,7 @@ public class GematriaService {
         return (base != null ? base : ch);
     }
 
-    // Gematria hechrechi d'une chaîne (utilisé pour le Milouï)
+    // Gematria hechrechi d'une chaîne (utilisé pour Milouï et Hakadmi)
     private int computeHechrechiForString(String s) {
         int sum = 0;
         for (int i = 0; i < s.length(); i++) {
